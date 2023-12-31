@@ -11,8 +11,8 @@
 
 typedef struct {
     float* verts;
-    float* tex_coords;
     float* normals;
+    float* tex_coords;
 } objee_object;
 
 typedef struct {
@@ -66,23 +66,21 @@ void objee_get_object_info(objee_info* info, char* buffer, int length) {
     rewind(info->file);
 }
 
-/*
- * You are required to create your own fucking memory, this library doesn't fuck
- * around with memory shit so suck your own dick.
- * Oh also, call objee_get_object_info first to get the sizes for your memory :)
- */
-void objee_parse_object(objee_info info, objee_object* obj)
+void objee_parse_object(objee_info* info, objee_object* obj)
 {
     char line[OBJEE_BUFFER_SIZE];
+    int v = 0;
+    int vn = 0;
+    int vt = 0;
+    // int f = 0;
 
-    while (fgets(line, OBJEE_BUFFER_SIZE, info.file)) {
+    /* float* verts = malloc(info.v_count * 3 * sizeof(float)); */
+    /* float* tex_coords = malloc(info.vt_count * 2 * sizeof(float)); */
+    /* float* normals = malloc(info.vn_count * 3 * sizeof(float)); */
+
+    while (fgets(line, OBJEE_BUFFER_SIZE, info->file)) {
         /* printf(RED "DEBUG INFO:\n" NORMAL); */
         /* printf("\tline: %s\n", line); */
-
-        int v = 0;
-        int vn = 0;
-        int vt = 0;
-        int f = 0;
 
         switch (line[0]) {
             case '#':
@@ -90,11 +88,27 @@ void objee_parse_object(objee_info info, objee_object* obj)
             case 'v':
                 switch (line[1]) {
                     case ' ':
-                        sscanf(line, "v %f %f %f", obj->verts[v].x, obj->verts[v].y, obj->verts[v].z);
+                        printf("v: %s", line);
+                        sscanf(line, "v %f %f %f",
+                                &obj->verts[v * 3 + 0],
+                                &obj->verts[v * 3 + 1],
+                                &obj->verts[v * 3 + 2]);
+                        v++;
                         break;
                     case 'n':
+                        printf("vn: %s", line);
+                        sscanf(line, "vn %f %f %f",
+                                &obj->normals[vn * 3 + 0],
+                                &obj->normals[vn * 3 + 1],
+                                &obj->normals[vn * 3 + 2]);
+                        vn++;
                         break;
                     case 't':
+                        printf("vt: %s", line);
+                        sscanf(line, "vt %f %f",
+                                &obj->tex_coords[vt * 2 + 0],
+                                &obj->tex_coords[vt * 2 + 1]);
+                        vt++;
                         break;
                     default:
                         break;
@@ -107,12 +121,25 @@ void objee_parse_object(objee_info info, objee_object* obj)
                 break;
         }
     }
+    /**/
+    /* puts(""); */
+    /* for (int i = 0; i < info.v_count; i++) { */
+    /*     printf("v %f %f %f\n", verts[i * 3 + 0], verts[i * 3 + 1], verts[i * 3 + 2]); */
+    /* } */
+    /* puts(""); */
+    /* for (int i = 0; i < info.vt_count; i++) { */
+    /*     printf("vt %f %f\n", tex_coords[i * 2 + 0], tex_coords[i * 2 + 1]); */
+    /* } */
+    /* puts(""); */
+    /* for (int i = 0; i < info.vn_count; i++) { */
+    /*     printf("vn %f %f %f\n", normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2]); */
+    /* } */
 }
 
 int main(void)
 {
     objee_info info = {
-        .path = "teapot.obj",
+        .path = "example.obj",
         .file = fopen(info.path, "r"),
         .v_count = 0,
         .vn_count = 0,
@@ -122,19 +149,31 @@ int main(void)
     if (info.file == NULL) {
         printf(RED);
         perror(info.path);
+        printf(NORMAL);
         exit(1);
     }
+
+    objee_object object;
+    object.verts = (float*)malloc(info.v_count * 3 * sizeof(float));
+    object.tex_coords = (float*)malloc(info.vt_count * 2 * sizeof(float));
+    object.normals = (float*)malloc(info.vn_count * 3 * sizeof(float));
 
     char buffer[2048];
 
     objee_get_object_info(&info, buffer, 2048);
+    objee_parse_object(&info, &object);
 
     puts("");
-    printf(RED"DEBUG INFO:\n"NORMAL);
-    printf("\tv_count: %i\n", info.v_count);
-    printf("\tvn_count: %i\n", info.vn_count);
-    printf("\tvt_count: %i\n", info.vt_count);
-    printf("\tf_count: %i\n", info.f_count);
-
+    for (int i = 0; i < info.v_count; i++) {
+        printf("v %f %f %f\n", object.verts[i * 3 + 0], object.verts[i * 3 + 1], object.verts[i * 3 + 2]);
+    }
+    puts("");
+    for (int i = 0; i < info.vt_count; i++) {
+        printf("vt %f %f\n", object.tex_coords[i * 2 + 0], object.tex_coords[i * 2 + 1]);
+    }
+    puts("");
+    for (int i = 0; i < info.vn_count; i++) {
+        printf("vn %f %f %f\n", object.normals[i * 3 + 0], object.normals[i * 3 + 1], object.normals[i * 3 + 2]);
+    }
     return 0;
 }
